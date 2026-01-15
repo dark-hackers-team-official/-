@@ -356,7 +356,6 @@
 
         <button id="reset" class="btn">Reset</button>
 
-        <!-- ✅ NEW -->
         <button id="btnPrint" class="btn" title="Print">
           🖨️ Print
         </button>
@@ -364,17 +363,20 @@
         <button id="btnPdf" class="btn primary" title="Download PDF">
           📄 Download PDF
         </button>
+
+        <!-- ✅ NEW: Download TXT -->
+        <button id="btnTxt" class="btn" title="Download TXT">
+          📝 Download TXT
+        </button>
       </div>
     </div>
   </header>
 
   <main>
     <div class="wrap">
-      <!-- ✅ PDF area starts -->
       <div id="pdfArea">
         <div id="content" class="grid"></div>
       </div>
-      <!-- ✅ PDF area ends -->
     </div>
   </main>
 
@@ -435,7 +437,7 @@ const typingText = [
   "connecting to EIIN:120617 ... ok",
   "loading staff records ... ok",
   "public mode enabled (private info hidden)",
-  "type to search — filter by role — export PDF / print"
+  "type to search — filter by role — export PDF / print / txt"
 ];
 let ti = 0, tj = 0, erasing = false;
 const typedEl = document.getElementById("typed");
@@ -671,6 +673,82 @@ async function downloadPDF(){
 }
 btnPdf.addEventListener("click", downloadPDF);
 
+/* ========= Download TXT Button ========= */
+const btnTxt = document.getElementById("btnTxt");
+
+function makeTxtContent(){
+  const isPublic = document.body.classList.contains("public");
+  const mode = isPublic ? "PUBLIC MODE (Private Hidden)" : "FULL MODE (Private Visible)";
+
+  let out = "";
+  out += "DUHASHUHA ML HIGH SCHOOL — STAFF DIRECTORY\n";
+  out += "EIIN: 120617\n";
+  out += "Location: Duhasuha - Khansama - Dinajpur - Rangpur\n";
+  out += "Email: duhashuhamlhighschool@gmail.com\n";
+  out += "--------------------------------------------\n";
+  out += "EXPORT MODE: " + mode + "\n";
+  out += "--------------------------------------------\n\n";
+
+  const grouped = groupByRole(employees);
+  const roles = [...grouped.keys()].sort((a,b)=>{
+    const ia = sectionOrder.indexOf(a);
+    const ib = sectionOrder.indexOf(b);
+    if(ia === -1 && ib === -1) return a.localeCompare(b, 'bn');
+    if(ia === -1) return 1;
+    if(ib === -1) return -1;
+    return ia - ib;
+  });
+
+  roles.forEach(role=>{
+    const people = grouped.get(role) || [];
+    out += `▶ ${role} (${people.length} জন)\n`;
+    out += "--------------------------------------------\n";
+
+    people.forEach((p, idx)=>{
+      out += `${idx+1}. ${p.name_bn} (${p.gender || ""})\n`;
+      out += `   EN: ${p.name_en || ""}\n`;
+      out += `   Subject: ${p.subject || "N/A"}\n`;
+
+      if(!isPublic){
+        out += `   Mobile: ${p.mobile || "N/A"}\n`;
+        out += `   DOB: ${p.dob || "N/A"}\n`;
+        out += `   NID: ${p.nid || "N/A"}\n`;
+        out += `   TIN: ${p.tin || "N/A"}\n`;
+      }
+
+      out += "\n";
+    });
+
+    out += "\n";
+  });
+
+  out += "--------------------------------------------\n";
+  out += "© DUHASHUHA ML HIGH SCHOOL • Matrix Staff Directory\n";
+
+  return out;
+}
+
+function downloadTXT(){
+  const txt = makeTxtContent();
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+
+  const mode = document.body.classList.contains("public") ? "PUBLIC" : "FULL";
+  a.download = `Staff_Directory_${mode}.txt`;
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+  toast("TXT ডাউনলোড সম্পন্ন ✅");
+}
+
+btnTxt.addEventListener("click", downloadTXT);
+
 /* ========= MATRIX (BRIGHT + DENSE) ========= */
 (function matrixRain(){
   const canvas = document.getElementById('matrix');
@@ -721,5 +799,4 @@ initRoleOptions();
 apply();
 </script>
 </body>
-
 </html>
